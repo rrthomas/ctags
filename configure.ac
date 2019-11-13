@@ -653,6 +653,25 @@ AS_IF([test "x$enable_aspell" != "xno"], [
 			           AC_MSG_ERROR([Aspell not found])])])
 ])
 
+AH_TEMPLATE([HAVE_VALA],
+	[Define this value if vala is available.])
+AC_ARG_ENABLE([vala],
+	[AS_HELP_STRING([--disable-vala],
+		[disable vala support])])
+AS_IF([test "x$enable_vala" != "xno"], [
+	PKG_CHECK_MODULES(VALA, libvala-0.46,
+			       [have_vala=yes
+			       AC_DEFINE(HAVE_VALA)],
+			       [AS_IF([test "x$enable_vala" = "xyes"], [
+			           AC_MSG_ERROR([Vala not found])])])
+	AH_TEMPLATE([HAVE_GOBJECT_INTROSPECTION],
+		[Define this value if gobject introspection is available.])
+	PKG_CHECK_MODULES(GOBJECT_INTROSPECTION, gobject-introspection-1.0,
+			       [have_gobject_introspetion=yes
+			       AC_DEFINE(HAVE_GOBJECT_INTROSPECTION)],
+			       [AS_IF([test "x$enable_gobject_introspection" = "xyes"], [
+			           AC_MSG_ERROR([gobject introspection not found])])])
+])
 
 # Checks for missing prototypes
 # -----------------------------
