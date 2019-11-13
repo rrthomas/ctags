@@ -69,6 +69,11 @@
 #define RoleTemplateLocal  { true, "local", "local header" }
 
 /*
+*   DATA DECLARATIONS
+*/
+typedef enum { COMMENT_NONE, COMMENT_C, COMMENT_CPLUS, COMMENT_D } Comment;
+
+/*
 *   FUNCTION PROTOTYPES
 */
 extern bool cppIsBraceFormat (void);
@@ -129,5 +134,9 @@ extern vString * cppBuildMacroReplacement(
 		const char ** parameters, /* may be NULL */
 		int parameterCount
 	);
+
+int skipOverCplusComment (void);
+int cppSkipOverCComment (void);
+Comment isComment (void);
 
 #endif  /* CTAGS_MAIN_GET_H */

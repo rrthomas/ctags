@@ -79,6 +79,7 @@
 	FortranParser, \
 	FyppParser,	   \
 	GdbinitParser, \
+	GenieParser, \
 	GoParser, \
 	HtmlParser, \
 	IniconfParser, \
@@ -140,6 +141,7 @@
 	VeraParser, \
 	VerilogParser, \
 	SystemVerilogParser, \
+	ValaParser, \
 	VhdlParser, \
 	ValaParser, \
 	VimParser, \

@@ -36,11 +36,6 @@
 #define stringMatch(s1,s2)		(strcmp (s1,s2) == 0)
 #define isspacetab(c)			((c) == SPACE || (c) == TAB)
 
-/*
-*   DATA DECLARATIONS
-*/
-typedef enum { COMMENT_NONE, COMMENT_C, COMMENT_CPLUS, COMMENT_D } Comment;
-
 enum eCppLimits {
 	MaxCppNestingLevel = 20,
 	MaxDirectiveName = 10
@@ -1017,7 +1012,7 @@ static bool handleDirective (const int c, int *macroCorkIndex)
 /*  Called upon reading of a slash ('/') characters, determines whether a
  *  comment is encountered, and its type.
  */
-static Comment isComment (void)
+Comment isComment (void)
 {
 	Comment comment;
 	const int next = cppGetcFromUngetBufferOrFile ();
@@ -1039,7 +1034,7 @@ static Comment isComment (void)
 /*  Skips over a C style comment. According to ANSI specification a comment
  *  is treated as white space, so we perform this substitution.
  */
-static int cppSkipOverCComment (void)
+int cppSkipOverCComment (void)
 {
 	int c = cppGetcFromUngetBufferOrFile ();
 
@@ -1065,7 +1060,7 @@ static int cppSkipOverCComment (void)
 
 /*  Skips over a C++ style comment.
  */
-static int skipOverCplusComment (void)
+int skipOverCplusComment (void)
 {
 	int c;
 

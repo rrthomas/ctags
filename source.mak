@@ -180,6 +180,7 @@ PARSER_HEADS = \
 	parsers/make.h \
 	parsers/perl.h \
 	parsers/tcl.h \
+	parsers/vala.h \
 	\
 	$(NULL)
 

@@ -1,15 +1,15 @@
 /*
-*   Copyright (c) 2019, <YOURNAME HERE>
-*
-*   This source code is released for free distribution under the terms of the
-*   GNU General Public License version 2 or (at your option) any later version.
-*
-*   This module contains functions for parsing and scanning Vaka source files.
-*/
+ *   Copyright (c) 2019, Masatake Yamato <yamato@redhat.com>
+ *
+ *   This source code is released for free distribution under the terms of the
+ *   GNU General Public License version 2 or (at your option) any later version.
+ *
+ *   This module contains functions for parsing and scanning Vala source files.
+ */
 
 /*
-*   INCLUDE FILES
-*/
+ *   INCLUDE FILES
+ */
 #include "general.h"        /* must always come first */
 
 #include "tokeninfo.h"
@@ -20,46 +20,271 @@
 #include "entry.h"
 
 /*
-*   MACROS
-*/
+ *   MACROS
+ */
 
 #define tokenEqType(TKN,T)     ((TKN)->type == T)
 
 
 /*
-*   DATA DEFINITIONS
-*/
+ *   DATA DEFINITIONS
+ */
 
 typedef enum {
 	K_UNDEFINED = -1,
 	K_CLASS,
+	K_STRUCT,
+	K_INTERFACE,
+	K_ENUM,
+	K_ENUMVALUE,
+	K_ERRORDOMAIN,
+	K_ERRORCODE,
+	K_DELEGATE,
+	K_SIGNAL,
 	K_FIELD,
-	K_METHOD,
 	K_PROP,
+	K_METHOD,
+	K_LOCAL,
+	COUNT_KIND
 } valaKind;
 
 static kindDefinition ValaKinds [] = {
-	{ true,  'c', "class",      "classes"},
-	{ true,  'f', "field",      "fields"},
-	{ true,  'm', "method",     "methods"},
-	{ true,  'p', "property",   "properties"},
+	{ true,  'c', "class",       "classes" },
+	{ true,  's', "struct",      "structures" },
+	{ true,  'i', "interface",   "interfaces" },
+	{ true,  'e', "enum",        "enumerations" },
+	{ true,  'v', "enumvalue",   "enumeration Values" },
+	{ true,  'E', "errordomain", "error domains" },
+	{ true,  'r', "errorcode",   "error codes" },
+	{ true,  'd', "delegate",    "delegates" },
+	{ true,  'S', "signal",      "signals" },
+	{ true,  'f', "field",       "fields" },
+	{ true,  'p', "property",    "properties" },
+	{ true,  'm', "method",      "methods" },
+	{ false, 'l', "local",       "local variables" },
 };
 
 enum eKeywordId
 {
-	KEYWORD_CLASS,
-	KEYWORD_PUBLIC,
 	KEYWORD_STRING,
+	KEYWORD_INT,
+	KEYWORD_DOUBLE,
+	KEYWORD_FLOAT,
+	KEYWORD_BOOL,
 	KEYWORD_VOID,
+	KEYWORD_TYPE,
+	KEYWORD_ABSTRACT,
+	KEYWORD_AS,
+	KEYWORD_ASYNC,
+	KEYWORD_BASE,
+	KEYWORD_BREAK,
+	KEYWORD_CASE,
+	KEYWORD_CATCH,
+	KEYWORD_CLASS,
+	KEYWORD_CONST,
+	KEYWORD_CONSTRUCT,
+	KEYWORD_CONTINUE,
+	KEYWORD_DEFAULT,
+	KEYWORD_DELEGATE,
+	KEYWORD_DELETE,
+	KEYWORD_DO,
+	KEYWORD_DYNAMIC,
+	KEYWORD_ELSE,
+	KEYWORD_ENSURES,
+	KEYWORD_ENUM,
+	KEYWORD_ERRORDOMAIN,
+	KEYWORD_EXTERN,
+	KEYWORD_FALSE,
+	KEYWORD_FINALLY,
+	KEYWORD_FOR,
+	KEYWORD_FOREACH,
+	KEYWORD_GET,
+	KEYWORD_GLOBAL,
+	KEYWORD_IF,
+	KEYWORD_IN,
+	KEYWORD_INLINE,
+	KEYWORD_INTERFACE,
+	KEYWORD_INTERNAL,
+	KEYWORD_IS,
+	KEYWORD_LOCK,
+	KEYWORD_NAMESPACE,
+	KEYWORD_NEW,
+	KEYWORD_NULL,
+	KEYWORD_OUT,
+	KEYWORD_OVERRIDE,
+	KEYWORD_OWNED,
+	KEYWORD_PRIVATE,
+	KEYWORD_PROTECTED,
+	KEYWORD_PUBLIC,
+	KEYWORD_REF,
+	KEYWORD_REQUIRES,
+	KEYWORD_RETURN,
+	KEYWORD_SET,
+	KEYWORD_SIGNAL,
+	KEYWORD_SIZEOF,
+	KEYWORD_STATIC,
+	KEYWORD_STRUCT,
+	KEYWORD_SWITCH,
+	KEYWORD_THIS,
+	KEYWORD_THROW,
+	KEYWORD_THROWS,
+	KEYWORD_TRUE,
+	KEYWORD_TRY,
+	KEYWORD_TYPEOF,
+	KEYWORD_UNOWNED,
+	KEYWORD_USING,
+	KEYWORD_VALUE,
+	KEYWORD_VAR,
+	KEYWORD_VIRTUAL,
+	KEYWORD_WEAK,
+	KEYWORD_WHILE,
+	KEYWORD_YIELD,
+
 };
 
 typedef int keywordId; /* to allow KEYWORD_NONE */
 
+/*
+Selection: if, else, switch, case, default
+Iteration: do, while, for, foreach, in
+Jumping: break, continue, return
+Exception Handling: try, catch, finally, throw
+Synchronization: lock
+Type Declaration: class, interface, struct, enum, delegate, errordomain
+Type Modifiers: const, weak, unowned, dynamic
+Modifiers: abstract, virtual, override, signal, extern, static, async, inline, new
+Access Modifiers: public, private, protected, internal
+Method Parameters: out, ref
+Method Contract Keywords: throws, requires, ensures
+Namespaces: namespace, using
+Operator Keywords: as, is, in, new, delete, sizeof, typeof
+Access Keywords: this, base
+Literal Keywords: null, true, false
+Property Context: get, set, construct, default, value
+Construction Blocks: construct, static construct, class construct
+Other: void, var, yield, global, owned
+
+Operators
+Arithmetic: +, -, *, /, %
+Bitwise: ~, &, |, ^, <<, >>
+Relational: <, >, <=, >=
+Equality: ==, !=
+Logic: !, &&, ||
+Assignment: =, +=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=
+Increment, Decrement: ++, --
+Pointer: &, *, ->, delete
+Conditional: ?:
+Null-Coalescing: ??
+String Concatenation: +
+Method Invocation: ()
+Member Access: .
+Index: []
+Slice: [:]
+Lambda: =>
+Casting: (Type), (!), as
+Type Checking: is
+Ownership Transfer: (owned)
+Namespace Alias Qualifier: :: (currently only with global)
+Other: new, sizeof, typeof, in
+ */
+
+/*
+
++, -, *, /, %
+~, &, |, ^, <<, >>
+<, >, <=, >=
+==, !=
+!, &&, ||
+=, +=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=
+++, --
+&, *, ->
+?:
+??
++
+()
+.
+[]
+[:]
+=>
+!
+::
+
+*/
 static const keywordTable ValaKeywordTable [] = {
-	{ "class",  KEYWORD_CLASS  },
-	{ "public", KEYWORD_PUBLIC },
 	{ "string", KEYWORD_STRING },
+	{ "int", KEYWORD_INT },
+	{ "double", KEYWORD_DOUBLE },
+	{ "float", KEYWORD_FLOAT },
+	{ "bool", KEYWORD_BOOL },
+
 	{ "void",   KEYWORD_VOID  },
+   { "Type",       KEYWORD_TYPE },
+   { "abstract",       KEYWORD_ABSTRACT },
+   { "as",       KEYWORD_AS },
+   { "async",       KEYWORD_ASYNC },
+   { "base",       KEYWORD_BASE },
+   { "break",       KEYWORD_BREAK },
+   { "case",       KEYWORD_CASE },
+   { "catch",       KEYWORD_CATCH },
+   { "class",       KEYWORD_CLASS },
+   { "const",       KEYWORD_CONST },
+   { "construct",       KEYWORD_CONSTRUCT },
+   { "continue",       KEYWORD_CONTINUE },
+   { "default",       KEYWORD_DEFAULT },
+   { "delegate",       KEYWORD_DELEGATE },
+   { "delete",       KEYWORD_DELETE },
+   { "do",       KEYWORD_DO },
+   { "dynamic",       KEYWORD_DYNAMIC },
+   { "else",       KEYWORD_ELSE },
+   { "ensures",       KEYWORD_ENSURES },
+   { "enum",       KEYWORD_ENUM },
+   { "errordomain",       KEYWORD_ERRORDOMAIN },
+   { "extern",       KEYWORD_EXTERN },
+   { "false",       KEYWORD_FALSE },
+   { "finally",       KEYWORD_FINALLY },
+   { "for",       KEYWORD_FOR },
+   { "foreach",       KEYWORD_FOREACH },
+   { "get",       KEYWORD_GET },
+   { "global",       KEYWORD_GLOBAL },
+   { "if",       KEYWORD_IF },
+   { "in",       KEYWORD_IN },
+   { "inline",       KEYWORD_INLINE },
+   { "interface",       KEYWORD_INTERFACE },
+   { "internal",       KEYWORD_INTERNAL },
+   { "is",       KEYWORD_IS },
+   { "lock",       KEYWORD_LOCK },
+   { "namespace",       KEYWORD_NAMESPACE },
+   { "new",       KEYWORD_NEW },
+   { "null",       KEYWORD_NULL },
+   { "out",       KEYWORD_OUT },
+   { "override",       KEYWORD_OVERRIDE },
+   { "owned",       KEYWORD_OWNED },
+   { "private",       KEYWORD_PRIVATE },
+   { "protected",       KEYWORD_PROTECTED },
+   { "public",       KEYWORD_PUBLIC },
+   { "ref",       KEYWORD_REF },
+   { "requires",       KEYWORD_REQUIRES },
+   { "return",       KEYWORD_RETURN },
+   { "set",       KEYWORD_SET },
+   { "signal",       KEYWORD_SIGNAL },
+   { "sizeof",       KEYWORD_SIZEOF },
+   { "static",       KEYWORD_STATIC },
+   { "struct",       KEYWORD_STRUCT },
+   { "switch",       KEYWORD_SWITCH },
+   { "this",       KEYWORD_THIS },
+   { "throw",       KEYWORD_THROW },
+   { "throws",       KEYWORD_THROWS },
+   { "true",       KEYWORD_TRUE },
+   { "try",       KEYWORD_TRY },
+   { "typeof",       KEYWORD_TYPEOF },
+   { "unowned",       KEYWORD_UNOWNED },
+   { "using",       KEYWORD_USING },
+   { "value",       KEYWORD_VALUE },
+   { "var",       KEYWORD_VAR },
+   { "virtual",       KEYWORD_VIRTUAL },
+   { "weak",       KEYWORD_WEAK },
+   { "while",       KEYWORD_WHILE },
+   { "yield",       KEYWORD_YIELD },
 };
 
 enum ValaTokenType {
@@ -74,20 +299,21 @@ enum ValaTokenType {
 
 
 /*
-*   FUNCTION PROTOTYPES
-*/
+ *   FUNCTION PROTOTYPES
+ */
 
 static void readToken (tokenInfo *const token, void *data);
 
 
 /*
-*   DATA DEFINITIONS
-*/
+ *   DATA DEFINITIONS
+ */
 
 static struct tokenTypePair typePairs [] = {
 	{ '{', '}' },
 	{ '[', ']' },
 	{ '(', ')' },
+	{ '<', '>' },
 };
 
 static struct tokenInfoClass valaTokenInfoClass = {
@@ -107,8 +333,8 @@ static struct tokenInfoClass valaTokenInfoClass = {
 
 
 /*
-*   FUNCTION DEFINITIONS
-*/
+ *   FUNCTION DEFINITIONS
+ */
 
 static bool tokenIsEmpty (tokenInfo *token)
 {
@@ -255,6 +481,8 @@ static void readToken (tokenInfo *const token, void *data CTAGS_ATTR_UNUSED)
 	case ']':
 	case '(':
 	case ')':
+	case '<':
+	case '>':
 	case ';':
 	case ',':
 		token->type = c;
@@ -346,7 +574,7 @@ static void parseClassBody (tokenInfo *const token, int classCorkIndex)
 		if (tokenEqType (token, ';'))
 			kind = K_FIELD;
 		else if (tokenEqType (token, '{'))
-			kind = K_PROPERTY;
+			kind = K_PROP;
 		else
 			break;				/* Unexpected sequence of token */
 
@@ -369,7 +597,7 @@ static void parseClassBody (tokenInfo *const token, int classCorkIndex)
 		/* Fill scope field. */
 		entry->extensionFields.scopeIndex = classCorkIndex;
 
-		if (kind == K_PROPERTY)
+		if (kind == K_PROP)
 			tokenSkipOverPair (token);
 	} while (!tokenIsEOF (token));
 
@@ -422,6 +650,21 @@ extern parserDefinition* ValaParser (void)
 	def->keywordTable = ValaKeywordTable;
 	def->keywordCount = ARRAY_SIZE (ValaKeywordTable);
 	def->useCork = true;
+
+	def->parser = findValaTags;
+	return def;
+}
+
+extern parserDefinition* GenieParser (void)
+{
+	static const char *const extensions [] = { "gs", NULL };
+
+	parserDefinition* def = parserNew ("Genie");
+	def->kindTable = ValaKinds;
+	def->kindCount = ARRAY_SIZE (ValaKinds);
+	def->extensions = extensions;
+	def->keywordTable = ValaKeywordTable;
+	def->keywordCount = ARRAY_SIZE (ValaKeywordTable);
 
 	def->parser = findValaTags;
 	return def;

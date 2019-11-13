@@ -248,6 +248,7 @@
     <ClCompile Include="..\parsers\tex.c" />
     <ClCompile Include="..\parsers\ttcn.c" />
     <ClCompile Include="..\parsers\typescript.c" />
+    <ClCompile Include="..\parsers\vala.c" />
     <ClCompile Include="..\parsers\verilog.c" />
     <ClCompile Include="..\parsers\vhdl.c" />
     <ClCompile Include="..\parsers\vim.c" />
@@ -338,6 +339,7 @@
     <ClInclude Include="..\parsers\make.h" />
     <ClInclude Include="..\parsers\perl.h" />
     <ClInclude Include="..\parsers\tcl.h" />
+    <ClInclude Include="..\parsers\vala.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
