@@ -85,6 +85,8 @@ man/ctags-optlib.7.rst
 man/tags.5
 man/tags.5.html
 misc/mini-geany.actual
+parsers/ctags-vala.h
+parsers/ctags-visitor.c
 Tmain/**/Makefile
 Tmain/**/Makefile.am
 Tmain/**/Makefile.in

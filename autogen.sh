@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -xe
+#set -xe
 
 type autoreconf > /dev/null || exit 1
 type pkg-config > /dev/null || exit 1
