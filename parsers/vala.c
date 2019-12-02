@@ -296,7 +296,7 @@ static void parseStatement (tokenInfo *const token)
 	{
 		tokenCopy (lastToken, token);
 		tokenRead (token);
-		if (tokenEqType (token, '('))
+		if (tokenEqType (token, '(') && !tokenIsType (lastToken, KEYWORD))
 		{
 			makeSimpleTag (lastToken->string, K_METHOD);
 			foundSignature = tokenSkipOverPair (token);
@@ -346,7 +346,7 @@ static void parseClassBody (tokenInfo *const token, int classCorkIndex)
 		if (tokenEqType (token, ';'))
 			kind = K_FIELD;
 		else if (tokenEqType (token, '{'))
-			kind = K_PROP;
+			kind = K_PROPERTY;
 		else
 			break;				/* Unexpected sequence of token */
 
@@ -369,7 +369,7 @@ static void parseClassBody (tokenInfo *const token, int classCorkIndex)
 		/* Fill scope field. */
 		entry->extensionFields.scopeIndex = classCorkIndex;
 
-		if (kind == K_PROP)
+		if (kind == K_PROPERTY)
 			tokenSkipOverPair (token);
 	} while (!tokenIsEOF (token));
 
@@ -401,9 +401,9 @@ static void findValaTags (void)
 		tokenRead (token);
 		if (tokenIsKeyword(token, CLASS))
 			parseClass (token);
-		else if (tokenIsType (token, IDENTIFIER)
-			|| tokenIsType (token, KEYWORD))
+		else if (tokenIsType (token, IDENTIFIER)) {
 			parseStatement (token);
+		}
 	}
 	while (!tokenIsEOF (token));
 
