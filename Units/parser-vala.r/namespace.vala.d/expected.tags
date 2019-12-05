@@ -1,0 +1,10 @@
+Address	input.vala	/^   class Address {$/;"	c	namespace:Data
+Data	input.vala	/^namespace Data {$/;"	n
+Person	input.vala	/^class Person {$/;"	c
+building	input.vala	/^      public int building;$/;"	f	class:Data.Address	typeref:typename:int
+city	input.vala	/^      public string city;$/;"	f	class:Data.Address	typeref:typename:string
+country	input.vala	/^      public string country;$/;"	f	class:Data.Address	typeref:typename:string
+d_street	input.vala	/^      public string d_street;$/;"	f	class:Data.Address	typeref:typename:string
+floor	input.vala	/^      public int floor;$/;"	f	class:Data.Address	typeref:typename:int
+main	input.vala	/^void main(string[] args) {$/;"	m
+street	input.vala	/^      public string street {$/;"	p	class:Data.Address	typeref:typename:string
